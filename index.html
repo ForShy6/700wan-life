@@ -2183,6 +2183,26 @@ body {
 .sum-line b { font-weight: 700; }
 .sum-line .warn { color: var(--red-deep); }
 
+.sum-line em {
+  display: block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  line-height: 1.55;
+  font-style: normal;
+  color: var(--ink-4);
+}
+
+.bill-note {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 10px;
+  background: rgba(255, 249, 236, 0.6);
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
 .sum-total {
   display: flex;
   align-items: baseline;
@@ -3558,7 +3578,10 @@ const EVENTS = [
     id: 'family_pressure', once: true, img: 'ill_family', yearMin: 2026, yearMax: 2027, weight: 60,
     cond: function (s) { return s.flags.claimed && !s.flags.familyTalked; },
     title: '父母连夜赶来',
-    text: '父母坐了一夜硬座，拎着装存折的布袋站在你出租屋门口。\n母亲先哭，父亲把存折拍在桌上：这钱不能放你手里，你连工作都没有。\n家族群里已经有人发了“恭喜”，配图是你家老屋的门。',
+    text: function (s) {
+      var home = s.flags.ownsHome ? '你新家' : '你出租屋';
+      return '父母坐了一夜硬座，拎着装存折的布袋站在' + home + '门口。\n母亲先哭，父亲把存折拍在桌上：这钱不能放你手里，你连工作都没有。\n家族群里已经有人发了“恭喜”，配图是你家老屋的门。';
+    },
     choices: [
       {
         label: '给父母50万养老，其余自己管',
@@ -4178,6 +4201,7 @@ const EVENTS = [
       {
         label: '全力抢救，不惜代价',
         hint: '现金 -40 万 · 父母 +20',
+        debtOk: true,
         apply: function (s) {
           var cost = s.medicalCover ? 200000 : 400000;
           s.cash -= cost; s.parents += 20; s.happiness -= 2; s.flags.fatherSaved = 1;
@@ -4187,6 +4211,7 @@ const EVENTS = [
       {
         label: '保守治疗',
         hint: '现金 -12 万 · 父母 -8',
+        debtOk: true,
         apply: function (s) {
           var cost = s.medicalCover ? 60000 : 120000;
           s.cash -= cost; s.parents -= 8; s.happiness -= 6; s.flags.fatherDead = 1;
@@ -4196,6 +4221,7 @@ const EVENTS = [
       {
         label: '签放弃治疗',
         hint: '现金 -2 万 · 父母 -25',
+        debtOk: true,
         apply: function (s) {
           s.cash -= 20000; s.parents -= 25; s.happiness -= 15; s.flags.fatherDead = 1;
           return '你在同意书上签了字，笔尖把纸划破了。\n母亲没有看你。\n葬礼上，亲戚说你孝顺，你一句都没接。';
@@ -4282,7 +4308,10 @@ const EVENTS = [
     id: 'father_pride', once: true, img: 'ill_family', yearMin: 2031, yearMax: 2034, weight: 20,
     cond: function (s) { return s.flags.claimed && !s.flags.fatherPride && !s.flags.fatherDead; },
     title: '父亲来城里',
-    text: '父亲没打招呼就来了，站在你出租屋门口。\n下午两点，你穿着睡衣，电脑上开着行情。\n他看了一眼，说：你妈说你忙，我看你挺闲。',
+    text: function (s) {
+      var home = s.flags.ownsHome ? '你新家' : '你出租屋';
+      return '父亲没打招呼就来了，站在' + home + '门口。\n下午两点，你穿着睡衣，电脑上开着行情。\n他看了一眼，说：你妈说你忙，我看你挺闲。';
+    },
     choices: [
       {
         label: '带他看账本，解释你在做什么',
@@ -4582,7 +4611,10 @@ const EVENTS = [
     id: 'exposure_leak', once: true, img: 'ill_phone', yearMin: 2029, yearMax: 2040, weight: 20,
     cond: function (s) { return s.exposure >= 50 && !s.flags.leaked; },
     title: '楼下有人蹲守',
-    text: '你中奖的事上了本地热搜，标题是“95后毕业生中700万后躺平”。\n有人在你租的房子楼下蹲了三天，说要“合作”；\n有人加你微信，发来一张你昨天在超市买菜的偷拍照。',
+    text: function (s) {
+      var home = s.flags.ownsHome ? '你家' : '你租的房子';
+      return '你中奖的事上了本地热搜，标题是“95后毕业生中700万后躺平”。\n有人在' + home + '楼下蹲了三天，说要“合作”；\n有人加你微信，发来一张你昨天在超市买菜的偷拍照。';
+    },
     choices: [
       {
         label: '立刻搬家，雇安保',
@@ -5535,7 +5567,7 @@ const EVENTS = [
       },
       {
         label: '当场发火', hint: '父母 -5 · 幸福 +1',
-        apply: function (s) { s.parents -= 5; s.happiness += 1; return '你把筷子放下，说能不能别问了。\n饭没吃完，你一个人先回了出租屋。'; }
+        apply: function (s) { s.parents -= 5; s.happiness += 1; return '你把筷子放下，说能不能别问了。\n饭没吃完，你一个人先走了。'; }
       }
     ]
   },
@@ -6386,6 +6418,34 @@ function availableCash(s) {
   return v;
 }
 
+/* 车卖掉能拿多少钱：家用车二手商给 8 万，豪车给 32 万 */
+function carResale(s) {
+  if (!s.flags || !s.flags.hasCar) return 0;
+  return s.flags.luxuryCar ? 320000 : 80000;
+}
+
+/* 卖车：一次性拿到车款，之后不再有养车开销 */
+function sellCar(s) {
+  var v = carResale(s);
+  if (!v) return 0;
+  s.flags.hasCar = 0;
+  s.flags.luxuryCar = 0;
+  s.carCost = 0;
+  s.cash += v;
+  return v;
+}
+
+/* 这个事件是不是“怎么选都掏不出钱”：是的话允许借钱过关，避免卡死 */
+function eventDeadEnd(s, ev) {
+  if (!ev || !ev.choices) return false;
+  for (var i = 0; i < ev.choices.length; i++) {
+    var c = ev.choices[i];
+    if (c.cond && !c.cond(s)) continue;
+    if (choiceCashNeed(c) <= availableCash(s) + carResale(s)) return false;
+  }
+  return true;
+}
+
 /* 每月基础开销估算：生活费 + 房租 + 自缴社保 */
 function baseExpense(s) {
   var infl = Math.pow(1 + CONFIG.inflation, absMonth(s) / 12);
@@ -6412,11 +6472,15 @@ function applyChoice(s, ev, choice) {
     return { blocked: true, deltas: [], text: '这条路现在走不通' + (choice.req ? '：需要' + choice.req : '') + '。' };
   }
   var need = choiceCashNeed(choice);
-  if (need > availableCash(s)) {
+  var afford = availableCash(s);
+  /* 钱不够时先卖车；卖车也不够、而且这个事件怎么选都掏不出钱（或这个选项允许举债），就只能借钱过关，避免卡死 */
+  if (need > afford + carResale(s) && !choice.debtOk && !eventDeadEnd(s, ev)) {
     return { blocked: true, deltas: [], text: '你翻遍所有银行卡、理财和基金，凑不出这笔钱。' };
   }
   var before = snapshot(s);
   var text = '';
+  var soldCar = 0;
+  if (need > afford) soldCar = sellCar(s);
   try {
     if (choice.apply) text = choice.apply(s) || '';
     if (choice.effect) applyEffects(s, choice.effect);
@@ -6425,6 +6489,9 @@ function applyChoice(s, ev, choice) {
   }
   s.pendingEvent = null;
   s.temp = {};
+  if (soldCar > 0) {
+    text += '\n（现金不够，你把车卖了' + moneyPlain(soldCar) + '。）';
+  }
   var settle = settleShortfall(s);
   if (settle.sold > 0) {
     text += '\n（现金不够，自动赎回了' + moneyPlain(settle.sold) + '的理财/基金补上。）';
@@ -7276,7 +7343,13 @@ function init() {
   var auto = loadSlot(AUTO_SLOT);
   var cont = $('#btnContinue');
   if (SHARE_MODE) {
+    /* 分享版只有一个按钮：有存档时这个按钮就是「继续」，点它接着上一局 */
     cont.classList.add('hidden');
+    if (auto && auto.ending) {
+      $('#btnNew').textContent = '查看上一次结局';
+    } else if (auto) {
+      $('#btnNew').textContent = '继续：' + auto.year + '年' + (auto.month || 1) + '月 · ' + auto.age + '岁';
+    }
   } else if (auto && !auto.ending) {
     cont.classList.remove('hidden');
     cont.textContent = '继续：' + auto.year + '年' + (auto.month || 1) + '月 · ' + auto.age + '岁';
@@ -7290,6 +7363,10 @@ function init() {
 function updateStartMeta() {
   var box = $('#startMeta');
   if (!box) return;
+  if (!hasStorage()) {
+    box.innerHTML = '<span class="warn-text">这个浏览器不能存档（多半是微信内置浏览器），请点右上角用系统浏览器打开</span>';
+    return;
+  }
   if (SHARE_MODE) {
     box.innerHTML = '<span>一局约 456 个月 · 自动存档 · 60 岁结算</span>';
     return;
@@ -7329,6 +7406,12 @@ function bindImageShield() {
 
 function bindStart() {
   $('#btnNew').addEventListener('click', function () {
+    /* 分享版没有「继续」按钮，改用这一个按钮接着上一局，避免直接开新局覆盖存档 */
+    var auto = SHARE_MODE ? loadSlot(AUTO_SLOT) : null;
+    if (auto) {
+      enterWithSave(auto);
+      return;
+    }
     S = newState();
     TAB = 'home';
     $('#start-screen').classList.add('hidden');
@@ -7345,17 +7428,21 @@ function bindStart() {
   $('#btnContinue').addEventListener('click', function () {
     var auto = loadSlot(AUTO_SLOT);
     if (!auto) return;
-    S = auto;
-    TAB = 'home';
-    $('#start-screen').classList.add('hidden');
-    $('#game').classList.remove('hidden');
-    render();
-    if (S.ending) {
-      showEnding();
-    } else if (S.pendingEvent) {
-      openEvent(S.pendingEvent);
-    }
+    enterWithSave(auto);
   });
+}
+
+function enterWithSave(auto) {
+  S = auto;
+  TAB = 'home';
+  $('#start-screen').classList.add('hidden');
+  $('#game').classList.remove('hidden');
+  render();
+  if (S.ending) {
+    showEnding();
+  } else if (S.pendingEvent) {
+    openEvent(S.pendingEvent);
+  }
 }
 
 /* ---------------- 主渲染 ---------------- */
@@ -8398,6 +8485,8 @@ function renderMe() {
     (S.debts.consumer > 0 ? '<button class="btn ghost row-link" data-act="repay">还清消费贷</button>' : '') +
     (S.properties.length ? '<button class="btn ghost row-link" data-act="sellHouseAsk">卖掉自住房 · 估值 ' + money(propertyValue(S, S.properties[0])) + '</button>' +
       '<div class="hint-box">卖房款先还房贷，剩下的进现金。房贷清掉后不再有月供，但要重新付房租。</div>' : '') +
+    (S.flags.hasCar ? '<button class="btn ghost row-link" data-act="sellCarAsk">卖掉车 · 估值 ' + money(carResale(S)) + '</button>' +
+      '<div class="hint-box">车款一次性到手，之后不用再交保险、保养和油费。</div>' : '') +
     '<div class="section-title">完整人生记录 ' + S.log.length + ' 条</div>' +
     '<button class="btn ghost row-link" data-act="allLog">查看全部事件</button>' +
     '<div class="section-title">存档</div>' +
@@ -8420,12 +8509,22 @@ function openEvent(id) {
   var title = eventTitle(ev, S);
   var text = eventText(ev, S);
   var img = imgSrc(ev.img);
+  var deadEnd = eventDeadEnd(S, ev);
   var choices = ev.choices.map(function (c, idx) {
     var label = typeof c.label === 'function' ? c.label(S) : c.label;
     var need = choiceCashNeed(c);
     var locked = c.cond && !c.cond(S);
-    var short = need > availableCash(S) || locked;
-    var hint = (c.hint || '') + (locked ? ' · 需要 ' + (c.req || '条件不满足') : (short ? ' · 凑不出这笔钱' : ''));
+    var afford = availableCash(S);
+    var resale = carResale(S);
+    /* 钱不够：能卖车就卖车；连卖车都不够时，允许举债的选项或走投无路的事件可以借钱 */
+    var extra = '';
+    if (!locked && need > afford + resale) {
+      if (c.debtOk || deadEnd) extra = ' · 现金不够，只能借网贷';
+    } else if (!locked && need > afford && need <= afford + resale) {
+      extra = ' · 要卖车凑钱';
+    }
+    var short = locked || (need > afford + resale && !c.debtOk && !deadEnd);
+    var hint = (c.hint || '') + (locked ? ' · 需要 ' + (c.req || '条件不满足') : extra);
     var num = (idx + 1 < 10 ? '0' : '') + (idx + 1);
     return '<button class="choice" data-act="choice" data-idx="' + idx + '" ' + (short ? 'disabled' : '') + '>' +
       '<span class="choice-num">' + num + '</span>' +
@@ -8549,19 +8648,48 @@ function showInfo(key) {
 }
 
 /* ---------------- 月度流水 ---------------- */
+var BILL_TIPS = {
+  '生活费': '吃饭、交通、话费宽带、日用品、水电，二线城市一个人约 3000 元/月',
+  '房租': '单间房租约 1600 元/月',
+  '房租（合租）': '失业且现金不足 8 万，自动搬去合租，约 800 元/月',
+  '社保医保自缴': '没工作时养老和医疗得自己交，约 1000 元/月；上班后由公司代缴，这一项就没了',
+  '养车': '保险、保养、油费、停车，按每年 2 万（豪车 5 万）摊到每月',
+  '商业医疗险': '9000 元/年，摊到每月 750 元',
+  '孩子开销': '3.6 万元/年，上好学校 4.8 万元/年',
+  '父母照护': '请护工或给父母的生活补贴，按年费摊到每月',
+  '房贷月供': '按剩余贷款、4.2% 利率、30 年等额本息计算',
+  '物业与维修': '房子估值 0.3%/年 + 4000 元/年公共维修',
+  '消费贷利息': '消费贷按 12%/年计息',
+  '慢病用药 / 复查': '已治疗的慢性病，年费用摊到每月',
+  '母亲靶向药': '自费的靶向药，每年 3.2 万',
+  '指数/股票分红': '每年 7 月按持仓发放的分红',
+  '工资': '税后到手，随职级和绩效变化'
+};
+
+var FIXED_LABELS = ['生活费', '房租', '房租（合租）', '社保医保自缴'];
+
 function showMonthBill() {
   if (!S.lastMonth) { toast('还没有月度流水'); return; }
   var m = S.lastMonth;
+  var fixed = 0;
   var lines = m.fin.lines.map(function (l) {
     var cls = (l.type === 'warn' || l.type === 'invest') ? 'warn' : (l.value >= 0 ? 'up' : 'down');
-    return '<div class="sum-line"><span>' + l.label + '</span><b class="' + cls + '">' + money(l.value) + '</b></div>';
+    var tip = BILL_TIPS[l.label];
+    if (FIXED_LABELS.indexOf(l.label) >= 0) fixed += -l.value;
+    return '<div class="sum-line"><span>' + l.label +
+      (tip ? '<em>' + tip + '</em>' : '') + '</span><b class="' + cls + '">' + money(l.value) + '</b></div>';
   }).join('');
+  var note = fixed > 0
+    ? '固定开销 ' + money(fixed) + '/月 = 生活费（吃、行、话费、日用）+ 房租 + 社保医保。' +
+      (S.flags.ownsHome ? '已经买房，所以没有房租这一项。' : '失业时社保要自己交，所以比上班时更贵。')
+    : '';
   $('#modal-root').innerHTML =
     '<div class="modal-backdrop">' +
       '<div class="summary-card">' +
         '<div class="kicker">' + m.year + '年' + m.month + '月 · 月度流水</div>' +
         '<h2>' + (m.fin.net >= 0 ? '这个月存下了钱' : '这个月花超了') + '</h2>' +
         '<div class="sum-lines">' + (lines || '<div class="sum-line"><span>没有收支</span><b>—</b></div>') + '</div>' +
+        (note ? '<div class="bill-note">' + note + '</div>' : '') +
         '<div class="sum-total"><span>结余</span><b class="' + (m.fin.net >= 0 ? 'up' : 'down') + '">' + money(m.fin.net) + '</b></div>' +
         '<button class="btn gold" data-act="closeModal">关闭</button>' +
       '</div>' +
@@ -8789,6 +8917,31 @@ document.addEventListener('click', function (e) {
     var rs = sellProperty(S);
     closeModal();
     toast(rs.msg);
+    render();
+  } else if (act === 'sellCarAsk') {
+    var cv = carResale(S);
+    $('#modal-root').innerHTML =
+      '<div class="modal-backdrop">' +
+        '<div class="result-card">' +
+          '<div class="kicker">卖车</div>' +
+          '<div class="result-text">二手商报价 ' + money(cv) + '。\n卖掉后一次性到手 ' + money(cv) + '，每年不用再花 ' + money(S.carCost || 0) + '养车，幸福 -3。</div>' +
+          '<button class="btn gold" data-act="sellCar">确认卖车</button>' +
+          '<button class="btn ghost" data-act="closeModal">再想想</button>' +
+        '</div>' +
+      '</div>';
+  } else if (act === 'sellCar') {
+    var carPay = sellCar(S);
+    if (!carPay) { closeModal(); toast('你没有车'); return; }
+    S.happiness -= 3;
+    S.log.unshift({
+      year: S.year, month: S.month, age: S.age, title: '卖掉了车',
+      text: '车商压了两次价，最后成交' + moneyPlain(carPay) + '。\n车开走的时候，你站在路边看了一会儿。',
+      deltas: [{ label: '现金', value: carPay, money: true }, { label: '幸福', value: -3 }]
+    });
+    if (S.log.length > 480) S.log.pop();
+    saveAuto(S);
+    closeModal();
+    toast('卖车到手' + money(carPay));
     render();
   } else if (act === 'saveSlot') {
     saveSlot(S, t.getAttribute('data-slot'));
